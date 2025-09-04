@@ -58,3 +58,52 @@ REPORTS_DIR   = PROJECT_DIR / "reports"               # Where we save exported r
     - Each handler has its own level and its own destination.
     - A formatter keeps lines clean for better UI: timestamp | level | logger | message.
 """
+
+def configure_logger(verbose: bool = False) -> logging.Logger:
+    # logger process level. DEBUG when --verbose is used in terminal. - INFO by default
+    logLevel = logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+    # Verify log exists (parent = True), creates any missing folder in path
+    # exist_ok = True (if already exists, thats ok, avoid crashing)
+
+    LOG_DIR.mkdir(parents = True, exist_ok = True)
+
+    # Name for the logs, helps with filtering and identifying
+    logger = logging.getLogger("checklist_day4")
+
+    # Removes old handler to prevent duplicates, if configure_logger is called multiple times
+    if logger.handlers:
+        for handlers in list(logger.handlers):
+            logger.removeHandler(handlers)
+
+    # Set logger process level. DEBUG when --verbose is used in terminal. - INFO by default
+    logLevel()
+
+    # Logs format for better UI
+    logsFormat = logging.Formatter(
+        fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    # Console handler in real-time
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logLevel())
+    console_handler.setFormatter(logsFormat)
+
+    # File handler: Keeps logs historical record and rotates daily. Keeps the last 7 files
+    file_handler = TimedRotatingFileHandler(
+        filename = str(LOG_FILE),
+        when = "midnight",      # Rotates at midnight
+        interval = 1,           # Every day
+        backupCount = 7,        # Keeps teh last 7 files
+        encoding = "utf-8",     # Helps encoding text using (Unicode Transformation Format)
+        utc = False             # Use local time
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(file_handler)
+
+    # Outputs to console and file/directory
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+
+    return logger
