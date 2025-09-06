@@ -60,7 +60,7 @@ REPORTS_DIR   = PROJECT_DIR / "reports"               # Where we save exported r
 """
 
 def configure_logger(verbose: bool = False) -> logging.Logger:
-    # logger process level. DEBUG when --verbose is used in terminal. - INFO by default
+    # logger process level: DEBUG when --verbose is used in terminal. - INFO by default
     logLevel = logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     # Verify log exists (parent = True), creates any missing folder in path
@@ -107,3 +107,50 @@ def configure_logger(verbose: bool = False) -> logging.Logger:
     logger.addHandler(file_handler)
 
     return logger
+
+# ----------------------------
+# LOG DATA: load/save checklist
+# ----------------------------
+
+"""
+Tries to load existing checklist from JSON file.
+If missing or invalid, return an empty list to prevent app from crashing.
+"""
+def load_checklist() -> list[dict]: # Single-purpose function: returns current checklist as a list of dictionaries
+    if not DATA_FILE.exists(): # Checks if "day4_checklist.json file exists"
+        return [] # If not, start with empty list (do not crash)
+    try:
+        text = DATA_FILE.read_text(encoding = "utf-8") # reads file as a string using "utf-8"
+        data = json.loads(text) # Parse JSON string as readable python data (list/dictionaries)
+        if isinstance(data, list) and all(isinstance(i, dict) for i in data):
+            return data
+        print("⚠️ Checklist file found, but the format looked unexpected. Starting clean...")
+        return []
+    except Exception as error:
+        print(f"⚠️ Could not read checklist file: {error}. Starting clean...")
+        return []
+
+"""
+Saves the entire checklist to JSON file to keep progress between runs.
+"""
+def save_checklist(items: list[dict]) -> None:
+    try:
+        DATA_FILE.write_text(json.dumps(items, indent = 2), encoding = "utf-8")
+    except Exception as error:
+        print(f"❌ Could not save checklist: {error}")
+
+# ----------------------------
+# UI helpers
+# ----------------------------
+
+"""
+Prints menu option every loop to give the user choices
+"""
+def show_menu() -> None:
+    print("\n==== CHECKLIST + LOGGER ====")
+    print("1) Add a new checklist item")
+    print("2) Show all items")
+    print("3) Mark an item as complete")
+    print("4) Remove an item (by number OR name)")
+    print("5) Export logs to report (md/csv/txt)")
+    print("6) Exit")
